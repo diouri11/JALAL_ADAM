@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestionnaire de Recettes</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+    
+    .form-container {
+      margin-bottom: 30px;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    .btn {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+    
+    .btn-primary {
+      background-color: #3498db;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #2980b9;
+    }
+    
+    .btn-danger {
+      background-color: #e74c3c;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background-color: #c0392b;
+    }
+    
+    .btn-warning {
+      background-color: #f39c12;
+      color: white;
+    }
+    
+    .btn-warning:hover {
+      background-color: #d35400;
+    }
+    
+    .recipe-list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .recipe-item {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .recipe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .recipe-title {
+      margin: 0;
+      font-size: 20px;
+      color: #2c3e50;
+    }
+    
+    .recipe-time {
+      color: #7f8c8d;
+      font-style: italic;
+    }
+    
+    .recipe-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .recipe-content {
+      margin-top: 10px;
+    }
+    
+    .recipe-section {
+      margin-bottom: 10px;
+    }
+    
+    .recipe-section h4 {
+      margin-bottom: 5px;
+      color: #34495e;
+    }
+    
+    .ingredient-list {
+      list-style: disc;
+      padding-left: 20px;
+    }
+    
+    .no-recipes {
+      text-align: center;
+      color: #7f8c8d;
+      font-style: italic;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Gestionnaire de Recettes</h1>
+    
+    <div class="form-container">
+      <div class="form-group">
+        <label for="titre">Titre:</label>
+        <input type="text" id="titre" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="ingredients">Ingrédients (séparés par des virgules):</label>
+        <textarea id="ingredients" required></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="instructions">Instructions:</label>
+        <textarea id="instructions" required></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="temps">Temps de préparation:</label>
+        <input type="text" id="temps" placeholder="ex: 45 min" required>
+      </div>
+      
+      <button id="saveButton" class="btn btn-primary">Ajouter la recette</button>
+    </div>
+    
+    <h2>Liste des recettes</h2>
+    <ul id="recipeList" class="recipe-list">
+      <!-- Recipe items will be added dynamically here -->
+    </ul>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // DOM Elements
+      const titreInput = document.getElementById('titre');
+      const ingredientsInput = document.getElementById('ingredients');
+      const instructionsInput = document.getElementById('instructions');
+      const tempsInput = document.getElementById('temps');
+      const saveButton = document.getElementById('saveButton');
+      const recipeList = document.getElementById('recipeList');
+      
+      let recipes = [];
+      let currentEditId = null;
+      
+      // Load recipes from localStorage
+      function loadRecipes() {
+        const savedRecipes = localStorage.getItem('recipes');
+        if (savedRecipes) {
+          recipes = JSON.parse(savedRecipes);
+          displayRecipes();
+        } else {
+          recipeList.innerHTML = '<div class="no-recipes">Aucune recette pour le moment.</div>';
+        }
+      }
+      
+      // Save recipes to localStorage
+      function saveRecipes() {
+        localStorage.setItem('recipes', JSON.stringify(recipes));
+        displayRecipes();
+      }
+      
+      // Generate a unique ID
+      function generateId() {
+        return 'r' + Date.now();
+      }
+      
+      // Display all recipes
+      function displayRecipes() {
+        if (recipes.length === 0) {
+          recipeList.innerHTML = '<div class="no-recipes">Aucune recette pour le moment.</div>';
+          return;
+        }
+        
+        recipeList.innerHTML = '';
+        recipes.forEach(recipe => {
+          const recipeItem = document.createElement('li');
+          recipeItem.className = 'recipe-item';
+          
+          // Parse ingredients string to array for display
+          let ingredientsList;
+          try {
+            ingredientsList = JSON.parse(recipe.ingredients);
+          } catch (e) {
+            // If parsing fails, split by comma
+            ingredientsList = recipe.ingredients.split(',').map(item => item.trim());
+          }
+          
+          const ingredientsHtml = ingredientsList.map(ingredient => 
+            `<li>${ingredient}</li>`
+          ).join('');
+          
+          recipeItem.innerHTML = `
+            <div class="recipe-header">
+              <h3 class="recipe-title">${recipe.titre}</h3>
+              <div class="recipe-time">⏱️ ${recipe.temps}</div>
+            </div>
+            <div class="recipe-content">
+              <div class="recipe-section">
+                <h4>Ingrédients</h4>
+                <ul class="ingredient-list">
+                  ${ingredientsHtml}
+                </ul>
+              </div>
+              <div class="recipe-section">
+                <h4>Instructions</h4>
+                <p>${recipe.instructions}</p>
+              </div>
+            </div>
+            <div class="recipe-actions">
+              <button class="btn btn-warning edit-btn" data-id="${recipe.id}">Modifier</button>
+              <button class="btn btn-danger delete-btn" data-id="${recipe.id}">Supprimer</button>
+            </div>
+          `;
+          
+          recipeList.appendChild(recipeItem);
+        });
+        
+        // Add event listeners to edit and delete buttons
+        document.querySelectorAll('.edit-btn').forEach(button => {
+          button.addEventListener('click', editRecipe);
+        });
+        
+        document.querySelectorAll('.delete-btn').forEach(button => {
+          button.addEventListener('click', deleteRecipe);
+        });
+      }
+      
+      // Add or update a recipe
+      function addOrUpdateRecipe() {
+        const titre = titreInput.value.trim();
+        const ingredients = ingredientsInput.value.trim();
+        const instructions = instructionsInput.value.trim();
+        const temps = tempsInput.value.trim();
+        
+        if (!titre || !ingredients || !instructions || !temps) {
+          alert('Veuillez remplir tous les champs');
+          return;
+        }
+        
+        // Format ingredients as an array string
+        const ingredientsArray = ingredients.split(',').map(item => item.trim());
+        const ingredientsString = JSON.stringify(ingredientsArray);
+        
+        if (currentEditId) {
+          // Update existing recipe
+          const index = recipes.findIndex(recipe => recipe.id === currentEditId);
+          if (index !== -1) {
+            recipes[index] = {
+              id: currentEditId,
+              titre,
+              ingredients: ingredientsString,
+              instructions,
+              temps
+            };
+            currentEditId = null;
+            saveButton.textContent = 'Ajouter la recette';
+          }
+        } else {
+          // Add new recipe
+          const newRecipe = {
+            id: generateId(),
+            titre,
+            ingredients: ingredientsString,
+            instructions,
+            temps
+          };
+          recipes.push(newRecipe);
+        }
+        
+        // Clear form
+        titreInput.value = '';
+        ingredientsInput.value = '';
+        instructionsInput.value = '';
+        tempsInput.value = '';
+        
+        // Save and display updated recipes
+        saveRecipes();
+      }
+      
+      // Edit a recipe
+      function editRecipe(event) {
+        const recipeId = event.target.dataset.id;
+        const recipe = recipes.find(r => r.id === recipeId);
+        
+        if (recipe) {
+          titreInput.value = recipe.titre;
+          
+          // Parse ingredients for editing
+          let ingredientsList;
+          try {
+            ingredientsList = JSON.parse(recipe.ingredients);
+            ingredientsInput.value = ingredientsList.join(', ');
+          } catch (e) {
+            ingredientsInput.value = recipe.ingredients;
+          }
+          
+          instructionsInput.value = recipe.instructions;
+          tempsInput.value = recipe.temps;
+          
+          currentEditId = recipeId;
+          saveButton.textContent = 'Mettre à jour la recette';
+          
+          // Scroll to form
+          document.querySelector('.form-container').scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      
+      // Delete a recipe
+      function deleteRecipe(event) {
+        const recipeId = event.target.dataset.id;
+        if (confirm('Êtes-vous sûr de vouloir supprimer cette recette?')) {
+          recipes = recipes.filter(recipe => recipe.id !== recipeId);
+          saveRecipes();
+        }
+      }
+      
+      // Event listeners
+      saveButton.addEventListener('click', addOrUpdateRecipe);
+      
+      // Initialize
+      loadRecipes();
+    });
+  </script>
+</body>
+</html>
