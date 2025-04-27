@@ -95,8 +95,8 @@
               '<td>' + r.instructions + '</td>' +
               '<td>' + r.temps + '</td>' +
               '<td>' +
-                '<button class="btn btn-sm btn-warning me-1" onclick="editRecipe(' + i + ')">Modifier</button>' +
-                '<button class="btn btn-sm btn-danger" onclick="deleteRecipe(' + i + ')">Supprimer</button>' +
+                '<button class="btn btn-sm btn-warning me-1" onclick="editRecipe(' + i + ') " onkeydown="if(event.key === `Enter`){editRecipe(' + i + ')}">Modifier</button>' +
+                '<button class="btn btn-sm btn-danger" onclick="deleteRecipe(' + i + ')" onkeydown="if(event.key === `Enter`){deleteRecipe(' + i + ')}">Supprimer</button>' +
               '</td>';
             recipeList.appendChild(row);
           }
